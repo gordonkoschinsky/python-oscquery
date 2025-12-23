@@ -6,12 +6,11 @@ from zeroconf import ServiceInfo, Zeroconf
 
 from .shared.host_info import OSCHostInfo
 from .shared.node import OSCQueryNode
-from .shared.osc_access import OSCAccess
 
 
 class OSCQueryService(object):
     """
-    A class providing an OSCQuery service. Automatically sets up a oscjson http server and advertises the oscjson server and osc server on zeroconf.
+    A class providing an OSCQuery service. Automatically sets up an oscjson http server and advertises the oscjson server and osc server on zeroconf.
 
     Attributes
     ----------
@@ -41,7 +40,7 @@ class OSCQueryService(object):
             {
                 "ACCESS": True,
                 "CLIPMODE": False,
-                "RANGE": True,
+                "RANGE": False,
                 "TYPE": True,
                 "VALUE": True,
             },
@@ -62,19 +61,8 @@ class OSCQueryService(object):
     def __del__(self):
         self._zeroconf.unregister_all_services()
 
-    def add_node(self, node):
+    def add_node(self, node: OSCQueryNode):
         self.root_node.add_child_node(node)
-
-    def advertise_endpoint(self, address, value=None, access=OSCAccess.READWRITE_VALUE):
-        new_node = OSCQueryNode(full_path=address, access=access)
-        if value:
-            if not isinstance(value, list):
-                new_node.value = [value]
-                new_node.type_ = [type(value)]
-            else:
-                new_node.value = value
-                new_node.type_ = [type(v) for v in value]
-        self.add_node(new_node)
 
     def _start_osc_query_service(self):
         oscqs_desc = {"txtvers": 1}

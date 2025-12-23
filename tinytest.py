@@ -1,6 +1,6 @@
 import time
 
-from tinyoscquery.queryservice import OSCQueryService
+from tinyoscquery.osc_query_service import OSCQueryService
 from tinyoscquery.shared.node import OSCQueryNode
 from tinyoscquery.shared.osc_access import OSCAccess
 
