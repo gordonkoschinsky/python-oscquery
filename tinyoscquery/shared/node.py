@@ -5,6 +5,18 @@ from typing import List, TypeVar, Union
 
 from tinyoscquery.shared.osc_access import OSCAccess
 
+disallowed_path_chars = (
+    " ",
+    "#",
+    "*",
+    ",",
+    "?",
+    "[",
+    "]",
+    "{",
+    "}",
+)
+
 
 class OSCNodeEncoder(JSONEncoder):
     def default(self, o):
@@ -56,6 +68,13 @@ class OSCQueryNode:
         description: str = None,
         value: Union[T, List[T]] = None,
     ):
+        if not self._is_valid_path(full_path):
+            raise ValueError(
+                "Invalid path: Path must not contain any of the following characters: {} ".format(
+                    disallowed_path_chars
+                )
+            )
+
         self.full_path = full_path
 
         self.contents: list["OSCQueryNode"] = contents or []
@@ -159,6 +178,14 @@ class OSCQueryNode:
 
     def to_json(self) -> str:
         return json.dumps(self, cls=OSCNodeEncoder)
+
+    def _is_valid_path(self, path: str) -> bool:
+        """Check if path contains characters that are not allowed by the OSC specification.
+        Won't check for forward slash '/', since this will be used to split the path into containers and methods"""
+
+        if any([x in path for x in disallowed_path_chars]):
+            return False
+        return True
 
     def __iter__(self):
         yield self
