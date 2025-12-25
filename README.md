@@ -2,8 +2,17 @@
 
 A very simple, work in progress, OSCQuery library for python.
 
-**THIS IS VERY MUCH A WORK IN PROGRESS** Very little of OSCQuery is actually implemented right now, just the bare
-minimum to advertise that a server exists.
+**THIS IS A WORK IN PROGRESS**
+
+The [core functionality](https://github.com/Vidvox/OSCQueryProposal?tab=readme-ov-file#core-functionality) (according to
+the specification) should be implemented.
+Some [optional attributes](https://github.com/Vidvox/OSCQueryProposal?tab=readme-ov-file#optional-attributes) like
+ACCESS, VALUE and DESCRIPTION are also implemented. However, lists (or other python
+iterables) are not supported as value types.
+
+Completely missing is the websocket communication. So no "listening" is possible.
+
+### **NB: The following documentation is outdated.**
 
 ## Installation
 
@@ -86,7 +95,9 @@ for service_info in browser.get_discovered_oscquery():
 - [x] Advertise osc and oscjson on zeroconfig
 - [x] Provide a basic oscjson server with a root node and HOST_INFO
 - [X] Add a mechanism to advertise OSC nodes
+- [ ] Use the configured OSC namespace to validate incoming OSC message (from another library?)
 - [ ] Add a mechanism to update OSC nodes with new values
 - [X] Add apis and tools to query other OSC services on the network
 - [ ] Add more documentation
+- [ ] Add tests
 - [ ] Finalize API design
