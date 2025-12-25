@@ -37,7 +37,7 @@ if __name__ == "__main__":
         node = client.query_node("/testing/is/cool")
         if node:
             print(
-                f"Node {node.full_path} with description {node.description} (value {node.value} of type {node.type_})"
+                f"Node {node.full_path} with description {node.description} (value {node.value} of type {node.type})"
             )
         else:
             print("Node not found")

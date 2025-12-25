@@ -146,22 +146,46 @@ class OSCPathNode:
         return self._attributes
 
     @property
+    def full_path(self) -> str:
+        return self._attributes[OSCQueryAttribute.FULL_PATH]
+
+    @property
+    def contents(self) -> list["OSCPathNode"]:
+        return self._attributes[OSCQueryAttribute.CONTENTS]
+
+    @property
+    def description(self) -> str:
+        return self._attributes[OSCQueryAttribute.DESCRIPTION]
+
+    @property
+    def access(self) -> OSCAccess:
+        return self._attributes[OSCQueryAttribute.ACCESS]
+
+    @property
+    def value(self) -> Any:
+        return self._attributes[OSCQueryAttribute.VALUE]
+
+    @property
+    def type(self) -> Any:
+        return self._attributes[OSCQueryAttribute.TYPE]
+
+    @property
     def is_method(self) -> bool:
         """Returns True if this node is an OSC method, False otherwise.
         An OSC method"""
-        if self._attributes[OSCQueryAttribute.CONTENTS]:
+        if self.contents:
             return False
         return True
 
     def find_subnode(self, full_path: str) -> Union["OSCPathNode", None]:
         """Recursively find a node with the given full path"""
-        if self._attributes[OSCQueryAttribute.FULL_PATH] == full_path:
+        if self.full_path == full_path:
             return self
 
-        if not self._attributes[OSCQueryAttribute.CONTENTS]:
+        if not self.contents:
             return None
 
-        for sub_node in self._attributes[OSCQueryAttribute.CONTENTS]:
+        for sub_node in self.contents:
             found_node = sub_node.find_subnode(full_path)
             if found_node:
                 return found_node
@@ -172,7 +196,7 @@ class OSCPathNode:
         if child == self:
             return
 
-        path_split = child._attributes[OSCQueryAttribute.FULL_PATH].rsplit("/", 1)
+        path_split = child.full_path.rsplit("/", 1)
         if len(path_split) < 2:
             raise Exception("Tried to add child node with invalid full path!")
 
@@ -187,19 +211,19 @@ class OSCPathNode:
             parent = OSCPathNode(parent_path)
             self.add_child_node(parent)
 
-        parent._attributes[OSCQueryAttribute.CONTENTS].append(child)
+        parent.contents.append(child)
 
     def to_json(self, attribute: OSCQueryAttribute | None = None) -> str:
         return json.dumps(self, cls=OSCNodeEncoder, attribute_filter=attribute)
 
     def __iter__(self):
         yield self
-        if self._attributes[OSCQueryAttribute.CONTENTS] is not None:
-            for subNode in self._attributes[OSCQueryAttribute.CONTENTS]:
+        if self.contents is not None:
+            for subNode in self.contents:
                 yield from subNode
 
     def __str__(self) -> str:
-        return f'<OSCQueryNode @ {self._attributes[OSCQueryAttribute.FULL_PATH]} (D: "{self._attributes[OSCQueryAttribute.DESCRIPTION]}" T:{self._attributes[OSCQueryAttribute.TYPE]} V:{self._attributes[OSCQueryAttribute.VALUE]})>'
+        return f'<OSCQueryNode @ {self.full_path} (D: "{self.description}" T:{self.type} V:{self.value})>'
 
 
 def osc_type_string_to_python_type(type_str: str) -> list[type]:
