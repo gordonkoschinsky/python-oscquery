@@ -40,13 +40,7 @@ if __name__ == "__main__":
             access=OSCAccess.READWRITE_VALUE,
         )
     )
-    osc_namespace.add_node(
-        OSCPathNode(
-            "/testing/is/listed",
-            value=[[1, 5]],
-            access=OSCAccess.READWRITE_VALUE,
-        )
-    )
+
     oscqs = OSCQueryService(osc_namespace, "Test-Service", 9020, 9020)
 
     logging.getLogger().setLevel(logging.DEBUG)
