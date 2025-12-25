@@ -6,10 +6,10 @@ from ipaddress import IPv4Address, IPv6Address
 from zeroconf import ServiceInfo, Zeroconf
 
 from .shared.host_info import OSCHostInfo
-from .shared.osc_path_node import OSCPathNode
+from .shared.osc_namespace import OSCNamespace
 
 
-class OSCQueryService(object):
+class OSCQueryService:
     """
     A class providing an OSCQuery service. Automatically sets up an oscjson http server and advertises the oscjson server and osc server on zeroconf.
 
@@ -22,17 +22,18 @@ class OSCQueryService(object):
 
     def __init__(
         self,
+        namespace: OSCNamespace,
         server_name: str,
         http_port: int,
         osc_port: int,
         osc_ip: IPv4Address | IPv6Address | str = "127.0.0.1",
     ) -> None:
+        self._namespace = namespace
         self.server_name = server_name
         self.http_port = http_port
         self.osc_port = osc_port
         self.osc_ip = ipaddress.ip_address(osc_ip)
 
-        self.root_node = OSCPathNode("/", description="root node")
         self.host_info = OSCHostInfo(
             server_name,
             {
@@ -51,7 +52,10 @@ class OSCQueryService(object):
         self._start_osc_query_service()
         self._advertise_osc_service()
         self.http_server = OSCQueryHTTPServer(
-            self.root_node, self.host_info, ("", self.http_port), OSCQueryHTTPHandler
+            self._namespace.root_node,
+            self.host_info,
+            ("", self.http_port),
+            OSCQueryHTTPHandler,
         )
         self.http_thread = threading.Thread(target=self._start_http_server)
         self.http_thread.start()
@@ -59,9 +63,6 @@ class OSCQueryService(object):
     def __del__(self):
         if hasattr(self, "_zeroconf"):
             self._zeroconf.unregister_all_services()
-
-    def add_node(self, node: OSCPathNode):
-        self.root_node.add_child_node(node)
 
     def _start_osc_query_service(self):
         oscqs_desc = {"txtvers": 1}

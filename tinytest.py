@@ -1,18 +1,23 @@
+import logging
 import time
 
 from tinyoscquery.osc_query_service import OSCQueryService
 from tinyoscquery.shared.osc_access import OSCAccess
+from tinyoscquery.shared.osc_namespace import OSCNamespace
 from tinyoscquery.shared.osc_path_node import OSCPathNode
 
 if __name__ == "__main__":
-    oscqs = OSCQueryService("Test-Service", 9020, 9020)
-    print(oscqs.root_node)
-
-    oscqs.add_node(
-        OSCPathNode("/testing/is/cool", value=False, access=OSCAccess.READWRITE_VALUE)
+    osc_namespace = OSCNamespace()
+    osc_namespace.add_node(
+        OSCPathNode("/testing/is/cool", value=99, access=OSCAccess.READONLY_VALUE)
     )
+    osc_namespace.add_node(
+        OSCPathNode("/testing/is/good", value=False, access=OSCAccess.READWRITE_VALUE)
+    )
+    oscqs = OSCQueryService(osc_namespace, "Test-Service", 9020, 9020)
 
-    print(oscqs.root_node)
+    logging.getLogger().setLevel(logging.DEBUG)
+    logging.debug("Server is up and serving namespace %s", osc_namespace)
 
     while True:
         time.sleep(1)

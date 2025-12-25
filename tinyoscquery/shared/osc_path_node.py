@@ -1,21 +1,10 @@
 import builtins
 import json
 from json import JSONEncoder
-from typing import List, TypeVar, Union
+from typing import Any, List, TypeVar, Union
 
 from tinyoscquery.shared.osc_access import OSCAccess
-
-disallowed_path_chars = (
-    " ",
-    "#",
-    "*",
-    ",",
-    "?",
-    "[",
-    "]",
-    "{",
-    "}",
-)
+from tinyoscquery.shared.osc_spec import disallowed_path_chars, is_valid_path
 
 
 class OSCNodeEncoder(JSONEncoder):
@@ -68,7 +57,7 @@ class OSCPathNode:
         description: str = None,
         value: Union[T, List[T]] = None,
     ):
-        if not self._is_valid_path(full_path):
+        if not is_valid_path(full_path):
             raise ValueError(
                 "Invalid path: Path must not contain any of the following characters: {} ".format(
                     disallowed_path_chars
@@ -96,34 +85,35 @@ class OSCPathNode:
         self.description = description
 
     @classmethod
-    def from_json(cls, json) -> "OSCPathNode":
+    def from_json(cls, json_data: dict[str, Any]) -> "OSCPathNode":
+        """Factory method to create an instance of OSCPathNode from JSON data."""
         contents = None
-        if "CONTENTS" in json:
+        if "CONTENTS" in json_data:
             sub_nodes = []
-            for subNode in json["CONTENTS"]:
-                sub_nodes.append(OSCPathNode.from_json(json["CONTENTS"][subNode]))
+            for subNode in json_data["CONTENTS"]:
+                sub_nodes.append(OSCPathNode.from_json(json_data["CONTENTS"][subNode]))
             contents = sub_nodes
 
         # This *should* be required but some implementations don't have it...
         full_path = None
-        if "FULL_PATH" in json:
-            full_path = json["FULL_PATH"]
+        if "FULL_PATH" in json_data:
+            full_path = json_data["FULL_PATH"]
 
         description = None
-        if "DESCRIPTION" in json:
-            description = json["DESCRIPTION"]
+        if "DESCRIPTION" in json_data:
+            description = json_data["DESCRIPTION"]
 
         access = None
-        if "ACCESS" in json:
-            access = OSCAccess(json["ACCESS"])
+        if "ACCESS" in json_data:
+            access = OSCAccess(json_data["ACCESS"])
 
         value = None
-        if "VALUE" in json:
+        if "VALUE" in json_data:
             value = []
-            if not isinstance(json["VALUE"], list):
+            if not isinstance(json_data["VALUE"], list):
                 raise Exception("OSCQuery JSON Value is not List / Array? Out-of-spec?")
 
-            for idx, v in enumerate(json["VALUE"]):
+            for idx, v in enumerate(json_data["VALUE"]):
                 # According to the spec, if there is not yet a value, the return will be an empty JSON object
                 if isinstance(v, dict) and not v:
                     # FIXME does this apply to all values in the value array always...? I assume it does here
@@ -141,7 +131,16 @@ class OSCPathNode:
             types.append(type(v))
         return types
 
+    @property
+    def is_method(self) -> bool:
+        """Returns True if this node is an OSC method, False otherwise.
+        An OSC method"""
+        if self.contents:
+            return False
+        return True
+
     def find_subnode(self, full_path: str) -> Union["OSCPathNode", None]:
+        """Recursively find a node with the given full path"""
         if self.full_path == full_path:
             return self
 
@@ -178,14 +177,6 @@ class OSCPathNode:
 
     def to_json(self) -> str:
         return json.dumps(self, cls=OSCNodeEncoder)
-
-    def _is_valid_path(self, path: str) -> bool:
-        """Check if path contains characters that are not allowed by the OSC specification.
-        Won't check for forward slash '/', since this will be used to split the path into containers and methods"""
-
-        if any([x in path for x in disallowed_path_chars]):
-            return False
-        return True
 
     def __iter__(self):
         yield self
