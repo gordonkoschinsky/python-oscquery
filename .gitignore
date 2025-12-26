@@ -245,3 +245,10 @@ fabric.properties
 .idea/**/azureSettings.xml
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/inspectionProfiles/Project_Default.xml
+/.idea/runConfigurations/pytest_in_gordon.xml
+/.idea/ruff.xml
+/.idea/tinyoscquery.iml
+/.idea/vcs.xml
