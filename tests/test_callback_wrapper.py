@@ -4,7 +4,7 @@ import pytest
 from pythonosc import osc_message_builder
 from pythonosc.dispatcher import Dispatcher
 
-from tinyoscquery.osc_handler_wrapper import OSCCallbackWrapper
+from tinyoscquery.pythonosc_callback_wrapper import OSCCallbackWrapper, map_node
 from tinyoscquery.shared.osc_path_node import OSCPathNode
 
 logging.basicConfig(level=logging.DEBUG)
@@ -33,17 +33,33 @@ def callback(mocker):
 
 
 @pytest.fixture
-def callback_wrapper(dispatcher, callback, address, osc_path_node):
-    return OSCCallbackWrapper(osc_path_node, dispatcher=dispatcher, callback=callback)
+def callback_wrapper(callback, osc_path_node):
+    return OSCCallbackWrapper(osc_path_node, callback=callback)
+
+
+@pytest.fixture
+def needs_reply_address():
+    return False
+
+
+@pytest.fixture
+def fixed_args():
+    return ["first fixed", 123]
 
 
 class TestCallbackWrapper:
+    def test_wrapper_called_without_registered_handler_raises(self, callback_wrapper):
+        with pytest.raises(TypeError):
+            callback_wrapper()
+
     @pytest.mark.parametrize(
         "address", ["/lalalala", "/test", "/eins/zwo/drei"], indirect=False
     )
     def test_callback_wrapper_calls_callback_when_called(
-        self, dispatcher, callback, callback_wrapper, address
+        self, osc_path_node, dispatcher, callback, address
     ):
+        map_node(osc_path_node, dispatcher, callback)
+
         for h in dispatcher.handlers_for_address(address):
             h.invoke(
                 ("dummy", 99), osc_message_builder.OscMessageBuilder(address).build()
@@ -55,8 +71,9 @@ class TestCallbackWrapper:
         "address", ["/lalalala", "/test", "/eins/zwo/drei"], indirect=False
     )
     def test_callback_wrapper_does_not_call_callback_when_called_with_different_address(
-        self, dispatcher, callback, callback_wrapper, address
+        self, dispatcher, callback, callback_wrapper, osc_path_node
     ):
+        map_node(osc_path_node, dispatcher, callback)
         message_address = "/message/address"
 
         # There should be already no handler for the message address
@@ -68,6 +85,45 @@ class TestCallbackWrapper:
 
         callback.assert_not_called()
 
+    @pytest.mark.parametrize(
+        "address", ["/lalalala", "/test", "/eins/zwo/drei"], indirect=False
+    )
+    @pytest.mark.parametrize("needs_reply_address", [False, True], indirect=False)
+    @pytest.mark.parametrize("fixed_args", [["first fixed", 123], ()], indirect=False)
+    def test_callback_wrapper_calls_callback_with_optional_args_when_called(
+        self,
+        osc_path_node,
+        dispatcher,
+        callback,
+        address,
+        needs_reply_address,
+        fixed_args,
+    ):
+        map_node(
+            osc_path_node,
+            dispatcher,
+            callback,
+            None,
+            *fixed_args,
+            needs_reply_address=needs_reply_address,
+        )
+
+        for h in dispatcher.handlers_for_address(address):
+            h.invoke(
+                ("dummy", 99), osc_message_builder.OscMessageBuilder(address).build()
+            )
+
+        if needs_reply_address:
+            if fixed_args:
+                callback.assert_called_once_with(("dummy", 99), address, fixed_args)
+            else:
+                callback.assert_called_once_with(("dummy", 99), address)
+        else:
+            if fixed_args:
+                callback.assert_called_once_with(address, fixed_args)
+            else:
+                callback.assert_called_once_with(address)
+
     @pytest.mark.parametrize("address", ["/test"], indirect=False)
     @pytest.mark.parametrize(
         "osc_path_node", [OSCPathNode("/test", value=67)], indirect=False
@@ -75,6 +131,8 @@ class TestCallbackWrapper:
     def test_raises_when_value_in_message_missing(
         self, dispatcher, callback, callback_wrapper, address, osc_path_node
     ):
+        map_node(osc_path_node, dispatcher, callback)
+
         for h in dispatcher.handlers_for_address(address):
             with pytest.raises(TypeError):
                 h.invoke(
@@ -86,9 +144,32 @@ class TestCallbackWrapper:
     @pytest.mark.parametrize(
         "osc_path_node", [OSCPathNode("/test", value=67)], indirect=False
     )
+    def test_raises_when_too_many_value_in_message(
+        self, dispatcher, callback, callback_wrapper, address, osc_path_node
+    ):
+        map_node(osc_path_node, dispatcher, callback)
+
+        message_builder = osc_message_builder.OscMessageBuilder(address)
+        for v in node_values:
+            message_builder.add_arg(v)
+        message = message_builder.build()
+
+        for h in dispatcher.handlers_for_address(address):
+            with pytest.raises(TypeError):
+                h.invoke(
+                    ("dummy", 99),
+                    message,
+                )
+
+    @pytest.mark.parametrize("address", ["/test"], indirect=False)
+    @pytest.mark.parametrize(
+        "osc_path_node", [OSCPathNode("/test", value=67)], indirect=False
+    )
     def test_callback_called_with_one_value(
         self, dispatcher, callback, callback_wrapper, address, osc_path_node
     ):
+        map_node(osc_path_node, dispatcher, callback)
+
         message_builder = osc_message_builder.OscMessageBuilder(address)
         value_1 = 1
         message_builder.add_arg(value_1)
@@ -106,6 +187,8 @@ class TestCallbackWrapper:
     def test_callback_called_with_many_values(
         self, dispatcher, callback, callback_wrapper, address, osc_path_node
     ):
+        map_node(osc_path_node, dispatcher, callback)
+
         message_builder = osc_message_builder.OscMessageBuilder(address)
 
         for v in node_values:
