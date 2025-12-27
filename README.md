@@ -98,6 +98,7 @@ for service_info in browser.get_discovered_oscquery():
 - [ ] Use the configured OSC namespace to validate incoming OSC message (from another library?)
 - [ ] Add a mechanism to update OSC nodes with new values
 - [X] Add apis and tools to query other OSC services on the network
+- [ ] Add websocket communication as per spec
 - [ ] Add more documentation
 - [ ] Add tests
 - [ ] Finalize API design
