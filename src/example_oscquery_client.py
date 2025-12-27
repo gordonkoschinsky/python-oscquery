@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # Start browser
     browser = OSCQueryBrowser()
-    time.sleep(2)  # Wait for discovery
+    time.sleep(1)  # Wait for discovery
     print("Browser is up.")
 
     for service_info in browser.get_discovered_oscquery():
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         node = client.query_node("/testing/is/cool")
         if node:
             print(
-                f"Node {node.full_path} with description {node.description} (value {node.value} of type {node.type})"
+                f"Node {node.full_path} with description {node.description} (value(s) {node.value} of type(s) {repr(node.type)})"
             )
         else:
             print("Node not found")
