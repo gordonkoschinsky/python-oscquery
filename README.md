@@ -18,7 +18,7 @@ is provided.
 ### Server
 
 The [core functionality](https://github.com/Vidvox/OSCQueryProposal?tab=readme-ov-file#core-functionality) (according to
-the specification) should be implemented.
+the specification) is implemented.
 Some [optional attributes](https://github.com/Vidvox/OSCQueryProposal?tab=readme-ov-file#optional-attributes) like
 ACCESS, VALUE and DESCRIPTION are also implemented. However, lists (or other python
 iterables) are not supported as value types.
@@ -27,7 +27,7 @@ Completely missing is the websocket communication. So no "listening" is possible
 
 ### Client / Browser
 
-Discovery of other OSCQuery servers on the network and querying of the OSC address space is working.
+Discovery of other OSCQuery servers on the network and querying of the OSC address space is implemented.
 
 ## Installation
 
@@ -37,15 +37,15 @@ To be written.
 
 ### Configuring the OSC address space
 
-To be written.
+To be written. See the example files for now.
 
 ### Advertising an OSCQuery Service
 
-To be written.
+To be written. See the example files for now.
 
 ### Discovering and Querying other OSCQuery Services
 
-To be written.
+To be written. See the example files for now.
 
 ## Project To-Do
 
