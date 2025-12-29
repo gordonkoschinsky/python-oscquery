@@ -254,3 +254,4 @@ fabric.properties
 /.idea/vcs.xml
 /coverage.lcov
 /.idea/python-oscquery.iml
+/.idea/.name

@@ -2,6 +2,8 @@
 
 An OSCQuery library for python.
 
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fgordonkoschinsky%2Fpython-oscquery%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
+
 [OSCQuery](https://github.com/Vidvox/OSCQueryProposal) is a protocol that allows
 an [Open Sound Control (OSC)](https://opensoundcontrol.stanford.edu) server to
 announce its presence and capabilities over the network.
