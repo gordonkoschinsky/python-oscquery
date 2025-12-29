@@ -4,7 +4,7 @@ version = "0.2.0"
 description = "OSCQuery library to advertise an Open Sound Control (OSC) service"
 authors = [
     { name = "Cyberkitsune" },
-    { name = "Frank Klein", email = "coding@theatris.de" },
+    { name = "Frank Klein", email = "4243101+gordonkoschinsky@users.noreply.github.com" },
 ]
 readme = "README.md"
 license = "MIT"
