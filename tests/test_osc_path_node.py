@@ -1,6 +1,7 @@
 import builtins
 
 import pytest
+
 from pythonoscquery.shared.osc_access import OSCAccess
 from pythonoscquery.shared.osc_address_space import OSCAddressSpace
 from pythonoscquery.shared.osc_path_node import OSCPathNode
@@ -200,21 +201,32 @@ class TestOSCPathNode:
 
     def test_node_attributes_are_set(self):
         # Arrange
-        child = OSCPathNode("/test/bar")
+        child = OSCPathNode(
+            "/test/bar",
+            access=OSCAccess.READONLY_VALUE,
+            description="child of test",
+            value=[99, "hello", True, False, 123.5],
+        )
         node = OSCPathNode(
             "/test",
             contents=[child],
-            access=OSCAccess.READONLY_VALUE,
             description="test",
-            value=[99, "hello", True, False, 123.5],
         )
         # Act
         # Assert
         assert node.attributes == {
             OSCQueryAttribute.FULL_PATH: "/test",
             OSCQueryAttribute.CONTENTS: [child],
-            OSCQueryAttribute.ACCESS: OSCAccess.READONLY_VALUE,
+            OSCQueryAttribute.ACCESS: OSCAccess.NO_VALUE,
             OSCQueryAttribute.DESCRIPTION: "test",
+            OSCQueryAttribute.VALUE: None,
+            OSCQueryAttribute.TYPE: None,
+        }
+        assert child.attributes == {
+            OSCQueryAttribute.FULL_PATH: "/test/bar",
+            OSCQueryAttribute.CONTENTS: None,
+            OSCQueryAttribute.ACCESS: OSCAccess.READONLY_VALUE,
+            OSCQueryAttribute.DESCRIPTION: "child of test",
             OSCQueryAttribute.VALUE: [99, "hello", True, False, 123.5],
             OSCQueryAttribute.TYPE: [
                 builtins.int,
@@ -225,7 +237,7 @@ class TestOSCPathNode:
             ],
         }
 
-    def test_node_is_method(self):
+    def test_node_is_container(self):
         # Arrange
         node = OSCPathNode(
             "/test",
@@ -234,9 +246,9 @@ class TestOSCPathNode:
         )
         # Act
         # Assert
-        assert node.is_method is True
+        assert node.is_container is False
 
-    def test_node_is_not_method(self, address_space):
+    def test_node_is_not_container(self, address_space):
         # Arrange
         node = OSCPathNode(
             "/test/bar",
@@ -247,7 +259,7 @@ class TestOSCPathNode:
         sut = address_space.find_node("/test")
         # Act
         # Assert
-        assert sut.is_method is False
+        assert sut.is_container is True
 
     def test_node_json_complete_serialization(self):
         # Arrange
@@ -267,7 +279,7 @@ class TestOSCPathNode:
         # Assert
         assert (
             json
-            == '{"FULL_PATH": "/test", "CONTENTS": {"foo": {"FULL_PATH": "/test/foo", "VALUE": [99, "hello", true, false, 123.5], "TYPE": "isTTf", "ACCESS": 1, "DESCRIPTION": "test"}}, "TYPE": "", "ACCESS": 0}'
+            == '{"FULL_PATH": "/test", "CONTENTS": {"foo": {"FULL_PATH": "/test/foo", "VALUE": [99, "hello", true, false, 123.5], "TYPE": "isTTf", "ACCESS": 1, "DESCRIPTION": "test"}}, "ACCESS": 0}'
         )
 
     def test_node_json_complete_serialization_empty_description_empty_contents(self):
@@ -300,28 +312,51 @@ class TestOSCPathNode:
     )
     def test_node_json_complete_serialization_filter_attribute(self, attribute):
         # Arrange
-        node = OSCPathNode(
-            "/test",
-            contents=[OSCPathNode("/test/foo")],
+        child = OSCPathNode(
+            "/test/foo",
             access=OSCAccess.READONLY_VALUE,
             value=[99, "hello", True, False, 123.5],
+            description="foo",
+        )
+        node = OSCPathNode(
+            "/test",
+            contents=[child],
             description="test",
         )
 
-        # Act
+        # Act 1
         json = node.to_json(attribute)
-        # Assert
+        # Assert 1
         match attribute:
             case OSCQueryAttribute.FULL_PATH:
                 assert json == '{"FULL_PATH": "/test"}'
+            case OSCQueryAttribute.VALUE:
+                assert json == "{}"
+            case OSCQueryAttribute.ACCESS:
+                assert json == '{"ACCESS": 0}'
+            case OSCQueryAttribute.CONTENTS:
+                assert json == '{"CONTENTS": {"foo": {}}}'
+            case OSCQueryAttribute.DESCRIPTION:
+                assert json == '{"DESCRIPTION": "test"}'
+            case OSCQueryAttribute.TYPE:
+                assert json == "{}"
+            case _:
+                assert False
+
+        # Act 2
+        json = child.to_json(attribute)
+        # Assert 2
+        match attribute:
+            case OSCQueryAttribute.FULL_PATH:
+                assert json == '{"FULL_PATH": "/test/foo"}'
             case OSCQueryAttribute.VALUE:
                 assert json == '{"VALUE": [99, "hello", true, false, 123.5]}'
             case OSCQueryAttribute.ACCESS:
                 assert json == '{"ACCESS": 1}'
             case OSCQueryAttribute.CONTENTS:
-                assert json == '{"CONTENTS": {"foo": {}}}'
+                assert json == "{}"
             case OSCQueryAttribute.DESCRIPTION:
-                assert json == '{"DESCRIPTION": "test"}'
+                assert json == '{"DESCRIPTION": "foo"}'
             case OSCQueryAttribute.TYPE:
                 assert json == '{"TYPE": "isTTf"}'
             case _:
@@ -350,7 +385,7 @@ class TestOSCPathNode:
         ]
         assert node.value == [99, "hello", True, False, 123.5]
         assert node.access == OSCAccess.READONLY_VALUE
-        assert node.contents == []
+        assert node.contents is None
         assert node.description is None
 
     def test_node_from_json_with_children(self):

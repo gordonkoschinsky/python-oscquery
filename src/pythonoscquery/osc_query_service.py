@@ -5,25 +5,20 @@ import urllib
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from ipaddress import IPv4Address, IPv6Address
 
+from zeroconf import ServiceInfo, Zeroconf
+
 from pythonoscquery.shared.osc_access import OSCAccess
 from pythonoscquery.shared.osc_address_space import OSCAddressSpace
 from pythonoscquery.shared.osc_host_info import OSCHostInfo
 from pythonoscquery.shared.osc_path_node import OSCPathNode
 from pythonoscquery.shared.oscquery_spec import OSCQueryAttribute
-from zeroconf import ServiceInfo, Zeroconf
 
 logger = logging.getLogger(__name__)
 
 
 class OSCQueryService:
     """
-    A class providing an OSCQuery service. Automatically sets up an oscjson http server and advertises the oscjson server and osc server on zeroconf.
-
-    Attributes:
-        server_name: Name of your OSC Service
-        http_port: Desired TCP port number for the oscjson HTTP server
-        osc_port: Desired UDP port number for the osc server
-        osc_ip: IP address of the oscjson server
+    A class providing an OSCQuery service. Automatically sets up an oscquery http server and advertises the oscquery server and osc server on zeroconf.
     """
 
     def __init__(
@@ -34,6 +29,14 @@ class OSCQueryService:
         osc_port: int,
         osc_ip: IPv4Address | IPv6Address | str = "127.0.0.1",
     ) -> None:
+        """
+        Args:
+            address_space (OSCAddressSpace): OSC address space
+            server_name: Name of your OSC Service
+            http_port: TCP port number for the oscquery HTTP server
+            osc_port: TCP/UDP port number that is announced for the osc server
+            osc_ip: IP address of the oscquery server. This is also announced as the ip for the osc server
+        """
         self._address_space = address_space
         self.server_name = server_name
         self.http_port = http_port

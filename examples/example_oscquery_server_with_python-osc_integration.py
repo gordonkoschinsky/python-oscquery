@@ -10,7 +10,7 @@ from pythonoscquery.shared.osc_address_space import OSCAddressSpace
 from pythonoscquery.shared.osc_path_node import OSCPathNode
 
 logging.basicConfig()
-logger = logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -21,29 +21,59 @@ def generic_handler(address, *args, **kwargs):
 
 
 if __name__ == "__main__":
-    osc_address_space = OSCAddressSpace()
-
+    # Instantiate the python-osc dispatcher
     dispatcher = Dispatcher()
 
+    # Configure the osc address space and map each method node on the python-osc dispatcher
+    osc_address_space = OSCAddressSpace()
+
     node = OSCPathNode(
-        "/testing/is/marvelous",
+        "/test/writable/float",
         value=99.0,
+        access=OSCAccess.READWRITE_VALUE,
+        description="Read/write float value",
+    )
+    map_node(node, dispatcher, generic_handler, address_space=osc_address_space)
+
+    node = OSCPathNode(
+        "/test/writable/bool",
+        value=False,
+        access=OSCAccess.READWRITE_VALUE,
+        description="Read/write boolean value",
+    )
+    map_node(node, dispatcher, generic_handler, address_space=osc_address_space)
+
+    node = OSCPathNode(
+        "/test/writable/integer",
+        value=12,
         access=OSCAccess.READWRITE_VALUE,
         description="Read/write int value",
     )
-
     map_node(node, dispatcher, generic_handler, address_space=osc_address_space)
 
     node = OSCPathNode(
-        "/testing/is/good", value=False, access=OSCAccess.READWRITE_VALUE
+        "/test/writable/string",
+        value="Hello",
+        access=OSCAccess.READWRITE_VALUE,
+        description="Read/write string value",
     )
+    map_node(node, dispatcher, generic_handler, address_space=osc_address_space)
 
+    node = OSCPathNode(
+        "/test/readable/string",
+        value="Hello",
+        access=OSCAccess.READONLY_VALUE,
+        description="Read-only string value",
+    )
     map_node(node, dispatcher, generic_handler, address_space=osc_address_space)
 
     osc_ip = "127.0.0.1"
-    osc_port = 1337
+    oscquery_port = 9020
+    osc_port = 9021
 
-    oscqs = OSCQueryService(osc_address_space, "Test-Service", 9020, osc_port, osc_ip)
+    oscqs = OSCQueryService(
+        osc_address_space, "Test-Service", oscquery_port, osc_port, osc_ip
+    )
 
     logger.debug(
         "OSCQuery Server is up and serving address space %s", osc_address_space

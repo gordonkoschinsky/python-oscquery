@@ -54,6 +54,8 @@ T = TypeVar("T", bound=int | float | bool | str)
 
 
 class OSCPathNode:
+    """A node in the OSC address space tree."""
+
     def __init__(
         self,
         full_path: str,
@@ -71,13 +73,16 @@ class OSCPathNode:
                 )
             )
 
+        if contents and value:
+            raise ValueError(
+                "A node can either have child nodes (for OSC containers) or values (for OSC methods), but not both."
+            )
+
         self._attributes: dict[OSCQueryAttribute, Any] = {}
 
         self._attributes[OSCQueryAttribute.FULL_PATH] = full_path
 
-        self._attributes[OSCQueryAttribute.CONTENTS]: list["OSCPathNode"] = (
-            contents or []
-        )
+        self._attributes[OSCQueryAttribute.CONTENTS]: list["OSCPathNode"] = contents
 
         # Ensure that value is an iterable
         if not isinstance(value, Iterable) or isinstance(value, str):
@@ -100,7 +105,7 @@ class OSCPathNode:
             for v in self._attributes[OSCQueryAttribute.VALUE]:
                 types.append(type(v))
 
-        self._attributes[OSCQueryAttribute.TYPE] = types if value is not None else None
+        self._attributes[OSCQueryAttribute.TYPE] = types if value else None
 
         self._attributes[OSCQueryAttribute.ACCESS] = access
 
@@ -169,15 +174,34 @@ class OSCPathNode:
         return self._attributes[OSCQueryAttribute.TYPE]
 
     @property
-    def is_method(self) -> bool:
-        """Returns True if this node is an OSC method, False otherwise.
-        An OSC method"""
-        if self.contents:
-            return False
-        return True
+    def is_container(self) -> bool:
+        """Returns True if this node is an OSC container, False otherwise.
+        An OSC container is a node that has child nodes, aka a branch in the address space tree.
+        To enable gradual build-up of the address tree, nodes are also considered to be containers if they have no
+        values configured.
+        """
+        if self.contents or not self.value:
+            return True
+        return False
+
+    def add_child(self, child: "OSCPathNode"):
+        """Add a child node to this node.
+        *This should not be called directly, but implicitly from OSCAddressSpace.add_node()*"""
+        if not self.is_container:
+            raise ValueError(
+                f"Can only add child nodes to an OSC container. Node '{self.full_path}' is not a container"
+            )
+        if self.contents is None:
+            self._attributes[OSCQueryAttribute.CONTENTS] = []
+        self.contents.append(child)
 
     def find_subnode(self, full_path: str) -> "OSCPathNode | None":
-        """Recursively find a node with the given full path"""
+        """Recursively find a node with the given full path.
+        Args:
+            full_path: Address of the node to find, e.g. "/test/bar"
+        Returns:
+            The found node or None if not found
+        """
         if self.full_path == full_path:
             return self
 
@@ -192,14 +216,37 @@ class OSCPathNode:
         return None
 
     def to_json(self, attribute: OSCQueryAttribute | None = None) -> str:
+        """Convert the attributes of this node to json.
+
+        Args:
+            attribute: OSC query attribute, e.g. "OSCQueryAttribute.VALUE". If given, only this attribute will be rendered.
+        Returns:
+            The json string
+        """
         return json.dumps(self, cls=OSCNodeEncoder, attribute_filter=attribute)
 
     def validate_values(self, values: list[T]) -> list[T]:
         """Validate the given value types against the specified types of this node.
-        Raises TypeError if any of the values are invalid, of if the number of values does
-        not match the number of types of this node.
-        Returns sanitized values,
+
+        Sanitizes some values:
+
+        - If the client sent 0 or 1 as a substitute for a boolean value, the value will be converted to its boolean
+        equivalent.
+
+        Args:
+            values: List of values to validate. Must be in the same order as configured for this node.
+        Returns:
+             Sanitized values
+        Raises:
+            TypeError if any of the values are invalid, of if the number of values does
+            not match the number of types of this node.
         """
+        if not self.type and values:
+            raise TypeError(f"Expected no value(s), got {len(values)}")
+
+        if not self.type:
+            return values
+
         if len(values) != len(self.type):
             raise TypeError(f"Expected {len(self.type)} value(s), got {len(values)}")
 

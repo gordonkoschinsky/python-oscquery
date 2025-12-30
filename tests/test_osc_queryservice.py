@@ -2,6 +2,7 @@ from ipaddress import IPv4Address
 
 import pytest
 import urllib3
+
 from pythonoscquery.osc_query_service import OSCQueryService
 from pythonoscquery.shared.osc_access import OSCAccess
 from pythonoscquery.shared.osc_address_space import OSCAddressSpace
@@ -70,7 +71,6 @@ class TestOSCQueryService:
             },
             "DESCRIPTION": "root node",
             "FULL_PATH": "/",
-            "TYPE": "",
         }
 
         # Act 3
@@ -135,7 +135,6 @@ class TestOSCQueryService:
             },
             "DESCRIPTION": "root node",
             "FULL_PATH": "/",
-            "TYPE": "",
         }
 
         # Act 7
