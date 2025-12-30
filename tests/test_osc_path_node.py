@@ -187,7 +187,7 @@ class TestOSCPathNode:
         assert node.__class__.__name__ in repr(node)
         assert str(node.full_path) in repr(node)
 
-    def test_node_value_checker(self):
+    def test_node_value_checker_accepts_values_with_correct_types(self):
         # Arrange
         node = OSCPathNode(
             "/test",
@@ -197,6 +197,15 @@ class TestOSCPathNode:
         # Act
         # Assert
         assert node.are_values_valid([12, "hi", False, True, 987.2]) is True
+        assert node.are_values_valid([12.55, False, 897, "gsdfg", 12]) is False
+
+    def test_node_value_checker_rejects_values_when_node_has_no_configured_types(self):
+        # Arrange
+        node = OSCPathNode(
+            "/test",
+        )
+        # Act
+        # Assert
         assert node.are_values_valid([12.55, False, 897, "gsdfg", 12]) is False
 
     def test_node_attributes_are_set(self):
@@ -437,3 +446,35 @@ class TestOSCPathNode:
                     "ACCESS": 1,
                 }
             )
+
+    def test_node_instantiated_with_content_and_value_raises(self):
+        # Arrange
+        # Act
+        # Assert
+        with pytest.raises(ValueError):
+            node = OSCPathNode(
+                full_path="/test",
+                contents=[OSCPathNode("/test/child")],
+                value=[99, "hello", True, False, 123.5],
+                access=OSCAccess.READONLY_VALUE,
+                description="Code can be either container or method, but not both.",
+            )
+
+    def test_child_node_added_to_method_node_raises(self):
+        # Arrange
+        method_node = OSCPathNode(
+            full_path="/test",
+            value=[99, "hello", True, False, 123.5],
+            access=OSCAccess.READONLY_VALUE,
+            description="Code can be either container or method, but not both.",
+        )
+        child_node = OSCPathNode(
+            full_path="/test/child",
+            value=[99],
+            access=OSCAccess.READONLY_VALUE,
+            description="This child node can't be added",
+        )
+        # Act
+        # Assert
+        with pytest.raises(ValueError):
+            method_node.add_child(child_node)

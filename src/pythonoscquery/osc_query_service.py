@@ -31,7 +31,7 @@ class OSCQueryService:
     ) -> None:
         """
         Args:
-            address_space (OSCAddressSpace): OSC address space
+            address_space: OSC address space to serve
             server_name: Name of your OSC Service
             http_port: TCP port number for the oscquery HTTP server
             osc_port: TCP/UDP port number that is announced for the osc server
