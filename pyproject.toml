@@ -1,6 +1,6 @@
 [project]
 name = "python-oscquery"
-version = "0.2.0"
+version = "0.2.1"
 description = "OSCQuery library to advertise an Open Sound Control (OSC) service"
 keywords = ["osc", "sound", "midi", "music", "audio", "lighting", "video", "show control"]
 classifiers = [
@@ -40,6 +40,12 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "pythonoscquery"
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
 
 [tool.uv]
 package = true
