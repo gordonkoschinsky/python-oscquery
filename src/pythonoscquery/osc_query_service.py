@@ -1,8 +1,9 @@
+import atexit
 import ipaddress
 import logging
 import threading
 import urllib
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import IPv4Address, IPv6Address
 
 from zeroconf import ServiceInfo, Zeroconf
@@ -57,23 +58,32 @@ class OSCQueryService:
             "UDP",
         )
 
-        self._zeroconf = Zeroconf(interfaces=[str(self.osc_ip)])
-        self._advertise_osc_query_service()
-        self._advertise_osc_service()
-        self.http_server = OSCQueryHTTPServer(
+        zeroconf = Zeroconf(interfaces=[str(self.osc_ip)])
+        self._advertise_osc_query_service(zeroconf)
+        self._advertise_osc_service(zeroconf)
+        http_server = OSCQueryHTTPServer(
             self._address_space.root_node,
             self.host_info,
             ("", self.http_port),
             OSCQueryHTTPHandler,
         )
-        self.http_thread = threading.Thread(target=self._start_http_server, daemon=True)
-        self.http_thread.start()
+        http_thread = threading.Thread(target=http_server.serve_forever, daemon=True)
+        http_thread.start()
+        logger.info(
+            f"Service started as {self.server_name} on {self.osc_ip}:{self.http_port}"
+        )
 
-    def __del__(self):
-        if hasattr(self, "_zeroconf"):
-            self._zeroconf.unregister_all_services()
+        def cleanup():
+            logger.debug("Unregistering zeroconf services")
+            zeroconf.unregister_all_services()
+            zeroconf.close()
 
-    def _advertise_osc_query_service(self):
+            logger.debug("Stopping HTTP server")
+            http_server.shutdown()
+
+        atexit.register(cleanup)
+
+    def _advertise_osc_query_service(self, zeroconf: Zeroconf):
         oscqs_desc = {"txtvers": 1}
         oscqs_info = ServiceInfo(
             "_oscjson._tcp.local.",
@@ -83,14 +93,15 @@ class OSCQueryService:
             0,
             oscqs_desc,
             "%s.oscjson.local." % self.server_name,
-            addresses=[str(self.osc_ip)],
+            parsed_addresses=[str(self.osc_ip)],
         )
-        self._zeroconf.register_service(oscqs_info)
+        zeroconf.register_service(oscqs_info)
 
-    def _start_http_server(self):
-        self.http_server.serve_forever()
+        logger.info(
+            f"Advertising osc query service as {self.server_name} on {self.osc_ip}:{self.http_port}"
+        )
 
-    def _advertise_osc_service(self):
+    def _advertise_osc_service(self, zeroconf: Zeroconf):
         osc_desc = {"txtvers": 1}
         osc_info = ServiceInfo(
             "_osc._udp.local.",
@@ -100,13 +111,16 @@ class OSCQueryService:
             0,
             osc_desc,
             "%s.osc.local." % self.server_name,
-            addresses=[str(self.osc_ip)],
+            parsed_addresses=[str(self.osc_ip)],
         )
 
-        self._zeroconf.register_service(osc_info)
+        zeroconf.register_service(osc_info)
+        logger.info(
+            f"Advertising osc service as {self.server_name} on {self.osc_ip}:{self.osc_port}"
+        )
 
 
-class OSCQueryHTTPServer(HTTPServer):
+class OSCQueryHTTPServer(ThreadingHTTPServer):
     def __init__(
         self,
         root_node,
@@ -180,6 +194,3 @@ class OSCQueryHTTPHandler(SimpleHTTPRequestHandler):
                 return
 
         self._respond(200, str(node.to_json(attribute)))
-
-    def log_message(self, format, *args):
-        pass
