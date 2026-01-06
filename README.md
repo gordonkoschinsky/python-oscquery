@@ -3,7 +3,7 @@
 An OSCQuery library for python.
 
 ![Python Version >=3.10](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fgordonkoschinsky%2Fpython-oscquery%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
-![Tests](https://github.com/gordonkoschinsky/python-oscquery/actions/workflows/python-package.yml/badge.svg)
+[![Tests](https://github.com/fraklein/python-oscquery/actions/workflows/tests.yml/badge.svg)](https://github.com/fraklein/python-oscquery/actions/workflows/tests.yml)
 
 [OSCQuery](https://github.com/Vidvox/OSCQueryProposal) is a protocol that allows
 an [Open Sound Control (OSC)](https://opensoundcontrol.stanford.edu) server to
@@ -117,6 +117,7 @@ oscqs = OSCQueryService(
 print("Server is up and serving address space %s", osc_address_space)
 
 input("Press Enter to terminate server...")
+oscqs.stop()
 ```
 
 The server can now be queried. For example, with [Chataigne](https://benjamin.kuperberg.fr/chataigne/en):
@@ -241,7 +242,6 @@ server.serve_forever()
 ## Project to-do
 
 - [ ] Make OSCQueryClient not depended on service_info, but manually configurable
-- [ ] Think about thread-safety of the HTTP-server
 - [ ] Add a mechanism to update OSC nodes with new values
 - [ ] Add the RANGE attribute and validate messages against it
 - [ ] Add websocket communication as per spec

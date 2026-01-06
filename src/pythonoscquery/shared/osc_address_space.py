@@ -1,4 +1,5 @@
 import logging
+import threading
 from functools import lru_cache
 
 from .osc_path_node import OSCPathNode
@@ -16,6 +17,11 @@ class OSCAddressSpace:
 
     def __init__(self):
         self._root = OSCPathNode("/", description="root node")
+        self._lock = threading.Lock()
+
+    @property
+    def lock(self) -> threading.Lock:
+        return self._lock
 
     @property
     def root_node(self) -> OSCPathNode:
@@ -69,7 +75,10 @@ class OSCAddressSpace:
                 child = self.find_node(child_path)
             if not child:
                 child = OSCPathNode(child_path)
-            current_node.add_child(child)
+
+            with self.lock:
+                current_node.add_child(child)
+
             current_node = child
 
         self.__class__.number_of_nodes.fget.cache_clear()
